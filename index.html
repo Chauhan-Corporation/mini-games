@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Classic Snake Game</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        * {
+            box-sizing: border-box;
+        }
         :root {
             --bg-color: #1a1a1a;
             --text-color: #f0f0f0;
@@ -37,10 +39,21 @@
         }
 
         body {
-            font-family: 'Press Start 2P', cursive;
+            font-family: cursive;
             background-color: var(--bg-color);
             color: var(--text-color);
             transition: background-color 0.3s, color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         .game-container {
             border: 8px solid var(--container-border);
@@ -48,24 +61,63 @@
             background-color: var(--container-bg);
             transition: border-color 0.5s ease, background-color 0.3s;
             line-height: 0;
+            border-radius: 1rem;
+            position: relative;
         }
         canvas {
             background-color: var(--canvas-bg);
             transition: background-color 0.3s;
+            display: block;
+            border-radius: 0.5rem;
         }
         #overlay {
             background-color: var(--overlay-bg);
             color: var(--text-color);
             line-height: initial;
             transition: background-color 0.3s, color 0.3s;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 1rem;
+            z-index: 10;
+            border-radius: 0.5rem;
+            padding: 1rem;
         }
         #overlay h1 {
             text-shadow: 0 0 10px var(--primary-color);
+            font-size: 2.25rem;
+            line-height: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        #overlay p {
+            font-size: 1rem;
+            line-height: 1.5rem;
+            margin-top: 1rem;
+            line-height: 1.5;
         }
         .button {
             background-color: var(--primary-color);
             color: var(--primary-text);
             box-shadow: 0 4px var(--primary-shadow);
+            font-size: 1.25rem;
+            line-height: 1.75rem;
+            text-transform: uppercase;
+            border-radius: 0.5rem;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            padding-left: 2rem;
+            padding-right: 2rem;
+            margin-top: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
         }
         .button:hover {
             opacity: 0.9;
@@ -76,13 +128,57 @@
             transform: translateY(2px);
             box-shadow: 0 2px var(--primary-shadow);
         }
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            font-size: 1.25rem;
+            line-height: 1.75rem;
+            width: 100%;
+        }
         .score-board span {
             color: var(--primary-color);
+        }
+        #pauseBtn {
+            background-color: var(--secondary-color);
+            color: var(--secondary-text);
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.875rem;
+        }
+        .control-group {
+            margin-top: 1rem;
+            width: 91.666667%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .control-group label {
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .mode-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
         }
         .mode-btn {
             background-color: var(--secondary-color);
             color: var(--secondary-text);
             border: 2px solid var(--secondary-color);
+            font-size: 0.75rem;
+            line-height: 1rem;
+            border-radius: 0.5rem;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
         .mode-btn.active {
             background-color: var(--primary-color);
@@ -91,9 +187,15 @@
         }
         #themeToggleBtn {
             background: var(--secondary-color);
-        }
-        #themeToggleBtn svg {
-            fill: var(--secondary-text);
+            color: var(--secondary-text);
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border: none;
         }
         input[type=range] { -webkit-appearance: none; background: transparent; }
         input[type=range]:focus { outline: none; }
@@ -103,17 +205,18 @@
         input[type=range]::-moz-range-thumb { background: var(--primary-color); box-shadow: 0 0 5px var(--primary-color); height: 24px; width: 24px; border-radius: 50%; cursor: pointer; border: none; }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen m-0 p-4 box-border">
+<body>
 
-<div id="gameWrapper" class="flex flex-col items-center">
-    <div class="game-container rounded-2xl">
-        <div id="overlay" class="absolute top-0 left-0 right-0 bottom-0 flex flex-col justify-center items-center text-center text-base z-10 rounded-lg p-4">
+<div id="gameWrapper" class="game-wrapper">
+    <div class="game-container">
+        <div id="overlay">
             <!-- Content generated by JS -->
         </div>
-        <canvas id="gameCanvas" class="block rounded-lg"></canvas>
+        <canvas id="gameCanvas"></canvas>
     </div>
-    <div id="scoreBoard" class="flex justify-between items-center p-4 text-2xl w-full" style="display: none;">
+    <div id="scoreBoard" class="score-board" style="display: none;">
         <div>SCORE: <span id="score">0</span></div>
+        <button id="pauseBtn" style="display: none;">PAUSE</button>
         <div>BEST: <span id="bestScore">0</span></div>
     </div>
 </div>
@@ -127,6 +230,7 @@
     const scoreEl = document.getElementById('score');
     const bestScoreEl = document.getElementById('bestScore');
     const gameContainer = document.querySelector('.game-container');
+    const pauseBtn = document.getElementById('pauseBtn');
 
     // --- Game Configuration ---
     let gridSize = 20;
@@ -136,8 +240,10 @@
     let borderlessMode = false;
     
     // --- Game State ---
-    let snake, food, dx, dy, score, bestScore = 0;
+    let snake, food, dx, dy, score;
+    let bestScore = localStorage.getItem('snakeBestScore') || 0;
     let changingDirection, gameActive, gameLoopTimeout;
+    let isPaused = false;
     
     // --- Preview Animation State ---
     let previewCanvas, previewCtx, previewSnake, previewAnimationTimeout;
@@ -145,8 +251,6 @@
 
     // --- Theme State ---
     let isLightMode = false;
-    const moonIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-6 h-6"><path d="M12 11.807A9.002 9.002 0 0 1 10.049 2a9.942 9.942 0 0 0-8.3 9.95c.21 5.525 4.674 9.99 10.201 9.99 5.526 0 9.99-4.465 9.99-9.99A8.952 8.952 0 0 1 12 11.807Z"/></svg>`;
-    const sunIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-6 h-6"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12ZM12 4V2M4 12H2M12 20v2M6.343 6.343l-1.414-1.414M6.343 17.657l-1.414 1.414M17.657 6.343l1.414-1.414M17.657 17.657l1.414 1.414Z"/></svg>`;
 
     // --- Touch Controls State ---
     let touchStartX = 0, touchStartY = 0, touchEndX = 0, touchEndY = 0;
@@ -160,8 +264,8 @@
         const containerWidth = Math.min(window.innerWidth - bodyPadding, 600);
         const containerHeight = Math.min(window.innerHeight - bodyPadding - 100, 600);
         
-        const availableWidth = containerWidth - borderSize;
-        const availableHeight = containerHeight - borderSize;
+        const availableWidth = containerWidth;
+        const availableHeight = containerHeight;
 
         tileCount = Math.floor(availableWidth / gridSize);
         canvas.width = tileCount * gridSize;
@@ -169,6 +273,7 @@
 
         gameContainer.style.width = `${canvas.width + borderSize}px`;
         gameContainer.style.height = `${canvas.height + borderSize}px`;
+        scoreBoard.style.width = `${canvas.width + borderSize}px`;
     }
 
     /**
@@ -176,11 +281,13 @@
      */
     function initializeGame() {
         gameActive = true;
+        isPaused = false;
         changingDirection = false;
         dx = gridSize;
         dy = 0;
         score = 0;
         scoreEl.textContent = score;
+        bestScoreEl.textContent = bestScore;
 
         const startX = Math.floor(tileCount / 2) * gridSize;
         const startY = Math.floor(tileCount / 2) * gridSize;
@@ -203,7 +310,6 @@
         }
 
         changingDirection = false;
-        clearTimeout(gameLoopTimeout);
         gameLoopTimeout = setTimeout(() => {
             clearCanvas();
             drawFood();
@@ -220,22 +326,25 @@
         gameContainer.style.borderColor = 'var(--container-border)';
         overlay.style.display = 'flex';
         overlay.innerHTML = `
-            <button id="themeToggleBtn" class="absolute top-4 right-4 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer">${isLightMode ? sunIcon : moonIcon}</button>
-            <h1 class="text-4xl mb-4">SNAKE</h1>
-            <div class="control-group w-11/12 flex flex-col items-center mt-4">
-                <label class="mb-2">BORDER</label>
-                <div class="mode-buttons flex justify-center gap-2">
-                    <button id="borderOnBtn" class="mode-btn text-xs rounded-lg py-2 px-4 cursor-pointer transition-all">With Border</button>
-                    <button id="borderOffBtn" class="mode-btn text-xs rounded-lg py-2 px-4 cursor-pointer transition-all">Without Border</button>
+            <button id="themeToggleBtn">${isLightMode ? "Dark Mode" : "Light Mode"}</button>
+            <h1>SNAKE</h1>
+            <div class="control-group">
+                <label>BEST: ${bestScore}</label>
+            </div>
+            <div class="control-group">
+                <label>BORDER</label>
+                <div class="mode-buttons">
+                    <button id="borderOnBtn" class="mode-btn">With Border</button>
+                    <button id="borderOffBtn" class="mode-btn">Without Border</button>
                 </div>
             </div>
-            <div class="control-group w-11/12 flex flex-col items-center mt-4">
-                <label for="speedControl" class="mb-2">SPEED: <span id="speedValue">${currentSpeed}</span></label>
-                <input type="range" id="speedControl" min="1" max="10" value="${currentSpeed}" class="w-4/5">
-                <canvas id="speedPreviewCanvas" class="mt-2 rounded-md"></canvas>
+            <div class="control-group">
+                <label for="speedControl">SPEED: <span id="speedValue">${currentSpeed}</span></label>
+                <input type="range" id="speedControl" min="1" max="10" value="${currentSpeed}" style="width: 80%;">
+                <canvas id="speedPreviewCanvas" style="margin-top: 0.5rem; border-radius: 0.375rem;"></canvas>
             </div>
-            <button id="startButton" class="button text-xl uppercase rounded-lg py-4 px-8 mt-6 cursor-pointer transition-all">Start Game</button>
-            <p class="text-base mt-4 leading-normal">Use Arrow Keys or Swipe to Move</p>
+            <button id="startButton" class="button">Start Game</button>
+            <p>Use Arrow Keys or Swipe to Move</p>
         `;
         document.getElementById('startButton').addEventListener('click', startGame);
         attachControlListeners();
@@ -245,24 +354,26 @@
      * Shows the game over screen.
      */
     function showGameOver() {
+        gameActive = false;
+        pauseBtn.style.display = 'none';
         overlay.style.display = 'flex';
         overlay.innerHTML = `
-            <button id="themeToggleBtn" class="absolute top-4 right-4 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer">${isLightMode ? sunIcon : moonIcon}</button>
-            <h1 class="text-4xl mb-4">GAME OVER</h1>
-            <div class="text-xl mb-4">Your Score: ${score}</div>
-            <div class="control-group w-11/12 flex flex-col items-center mt-4">
-                <label class="mb-2">BORDER</label>
-                <div class="mode-buttons flex justify-center gap-2">
-                    <button id="borderOnBtn" class="mode-btn text-xs rounded-lg py-2 px-4 cursor-pointer transition-all">With Border</button>
-                    <button id="borderOffBtn" class="mode-btn text-xs rounded-lg py-2 px-4 cursor-pointer transition-all">Without Border</button>
+            <button id="themeToggleBtn">${isLightMode ? "Dark Mode" : "Light Mode"}</button>
+            <h1>GAME OVER</h1>
+            <div style="font-size: 1.25rem; margin-bottom: 1rem;">Your Score: ${score}</div>
+            <div class="control-group">
+                <label>BORDER</label>
+                <div class="mode-buttons">
+                    <button id="borderOnBtn" class="mode-btn">With Border</button>
+                    <button id="borderOffBtn" class="mode-btn">Without Border</button>
                 </div>
             </div>
-            <div class="control-group w-11/12 flex flex-col items-center mt-4">
-                <label for="speedControl" class="mb-2">SPEED: <span id="speedValue">${currentSpeed}</span></label>
-                <input type="range" id="speedControl" min="1" max="10" value="${currentSpeed}" class="w-4/5">
-                <canvas id="speedPreviewCanvas" class="mt-2 rounded-md"></canvas>
+            <div class="control-group">
+                <label for="speedControl">SPEED: <span id="speedValue">${currentSpeed}</span></label>
+                <input type="range" id="speedControl" min="1" max="10" value="${currentSpeed}" style="width: 80%;">
+                <canvas id="speedPreviewCanvas" style="margin-top: 0.5rem; border-radius: 0.375rem;"></canvas>
             </div>
-            <button id="restartButton" class="button text-xl uppercase rounded-lg py-4 px-8 mt-6 cursor-pointer transition-all">Play Again</button>
+            <button id="restartButton" class="button">Play Again</button>
         `;
         document.getElementById('restartButton').addEventListener('click', startGame);
         attachControlListeners();
@@ -306,7 +417,7 @@
             themeToggleBtn.addEventListener('click', () => {
                 isLightMode = !isLightMode;
                 document.body.classList.toggle('light-mode');
-                themeToggleBtn.innerHTML = isLightMode ? sunIcon : moonIcon;
+                themeToggleBtn.textContent = isLightMode ? "Dark Mode" : "Light Mode";
             });
         }
         
@@ -360,7 +471,7 @@
     }
 
     /**
-     * Starts the game.
+     * Starts the game after a countdown.
      */
     function startGame() {
         clearTimeout(previewAnimationTimeout);
@@ -371,11 +482,51 @@
             gameContainer.style.borderColor = rootStyle.getPropertyValue('--danger-color');
         }
         updateGameSpeed();
-        overlay.style.display = 'none';
+        
+        overlay.style.display = 'flex'; 
         scoreBoard.style.display = 'flex';
-        resizeCanvas();
-        initializeGame();
-        gameLoop();
+        pauseBtn.style.display = 'none';
+
+        let count = 3;
+
+        function countdown() {
+            if (count > 0) {
+                overlay.innerHTML = `<h1 style="font-size: 5rem; text-shadow: 0 0 10px var(--primary-color);">${count}</h1>`;
+                count--;
+                setTimeout(countdown, 800);
+            } else {
+                overlay.innerHTML = `<h1 style="font-size: 5rem; text-shadow: 0 0 10px var(--primary-color);">GO!</h1>`;
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    pauseBtn.style.display = 'block';
+                    resizeCanvas();
+                    initializeGame();
+                    gameLoop();
+                }, 500);
+            }
+        }
+
+        countdown();
+    }
+
+    /**
+     * Toggles the pause state of the game.
+     */
+    function togglePause() {
+        if (!gameActive) return;
+        isPaused = !isPaused;
+        if (isPaused) {
+            clearTimeout(gameLoopTimeout);
+            overlay.style.display = 'flex';
+            overlay.innerHTML = `
+                <h1>PAUSED</h1>
+                <button id="resumeButton" class="button">Resume</button>
+            `;
+            document.getElementById('resumeButton').addEventListener('click', togglePause);
+        } else {
+            overlay.style.display = 'none';
+            gameLoop();
+        }
     }
 
     /**
@@ -431,9 +582,10 @@
             score += 10;
             if (score > bestScore) {
                 bestScore = score;
-                bestScoreEl.textContent = bestScore;
+                localStorage.setItem('snakeBestScore', bestScore);
             }
             scoreEl.textContent = score;
+            bestScoreEl.textContent = bestScore;
             generateFood();
         } else {
             snake.pop();
@@ -479,7 +631,14 @@
      * Handles keyboard input for direction change.
      */
     function changeDirection(event) {
-        if (changingDirection || !gameActive) return;
+        if (event.code === 'Space' || event.key === ' ') {
+            event.preventDefault();
+            togglePause();
+            return;
+        }
+
+        if (isPaused || changingDirection || !gameActive) return;
+        
         changingDirection = true;
         const keyPressed = event.key;
         const keyLower = keyPressed.toLowerCase();
@@ -499,7 +658,7 @@
     function handleTouchStart(e) { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }
     function handleTouchEnd(e) { touchEndX = e.changedTouches[0].screenX; touchEndY = e.changedTouches[0].screenY; handleSwipe(); }
     function handleSwipe() {
-        if (changingDirection || !gameActive) return;
+        if (isPaused || changingDirection || !gameActive) return;
         changingDirection = true;
         const deltaX = touchEndX - touchStartX;
         const deltaY = touchEndY - touchStartY;
@@ -521,6 +680,7 @@
     window.addEventListener('resize', () => { if (!gameActive) { resizeCanvas(); showStartScreen(); } });
     canvas.addEventListener('touchstart', handleTouchStart, false);
     canvas.addEventListener('touchend', handleTouchEnd, false);
+    pauseBtn.addEventListener('click', togglePause);
 
     // --- Initial Setup ---
     resizeCanvas();
