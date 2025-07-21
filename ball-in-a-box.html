@@ -5,10 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ball in Box Game</title>
     <style>
+        /* CSS Variables for theming */
+        :root {
+            --body-bg: #f9fafb; /* Light Mode Background */
+            --body-text: #111827; /* Light Mode Text */
+            --canvas-bg: #e5e7eb; /* Light Mode Canvas BG */
+            --game-over-bg: rgba(200, 200, 200, 0.75);
+            --button-bg: #3b82f6;
+            --button-hover-bg: #2563eb;
+            --button-text: #ffffff;
+            --ball-color: #ef4444; /* Red ball in light mode */
+            --paddle-color: #3b82f6;
+        }
+
+        body.dark-mode {
+            --body-bg: #1a202c; /* Dark Mode Background */
+            --body-text: #e2e8f0; /* Dark Mode Text */
+            --canvas-bg: #2d3748; /* Dark Mode Canvas BG */
+            --game-over-bg: rgba(0, 0, 0, 0.75);
+            --button-hover-bg: #1d4ed8;
+            --ball-color: #0095DD; /* Blue ball in dark mode */
+            --paddle-color: #0095DD;
+        }
+
         body {
             font-family: sans-serif;
-            background-color: #1a202c;
-            color: #e2e8f0;
+            background-color: var(--body-bg);
+            color: var(--body-text);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -16,22 +39,35 @@
             height: 100vh;
             margin: 0;
             overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
         }
+
         canvas {
-            background-color: #2d3748;
+            background-color: var(--canvas-bg);
             display: block;
             border-radius: 0.5rem;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            transition: background-color 0.3s;
         }
+
         .game-container {
             position: relative;
             text-align: center;
         }
+
+        .title-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+        }
+
         .game-title {
             font-size: 2.25rem; /* 36px */
             line-height: 2.5rem; /* 40px */
             margin-bottom: 1rem; /* 16px */
         }
+
         #gameOverScreen {
             position: absolute;
             top: 0;
@@ -41,54 +77,67 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background-color: rgba(0, 0, 0, 0.75);
+            background-color: var(--game-over-bg);
         }
+
         .game-over-title {
             font-size: 3rem; /* 48px */
             line-height: 1;
             color: #ef4444; /* red-500 */
         }
+
         .final-score-text {
             font-size: 1.5rem; /* 24px */
             margin-top: 0.5rem;
-            color: #e2e8f0;
+            color: var(--body-text);
         }
+
+        .theme-toggle-button,
         #restartButton {
             margin-top: 1rem; /* 16px */
-            padding-left: 1.5rem; /* 24px */
-            padding-right: 1.5rem; /* 24px */
-            padding-top: 0.75rem; /* 12px */
-            padding-bottom: 0.75rem; /* 12px */
-            background-color: #3b82f6; /* blue-500 */
-            color: #ffffff;
+            padding: 0.5rem 1rem;
+            background-color: var(--button-bg);
+            color: var(--button-text);
             font-weight: 700;
             border-radius: 0.5rem; /* 8px */
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             transition: all 0.2s ease-in-out;
-            transform: scale(1);
             border: none;
             cursor: pointer;
         }
-        #restartButton:hover {
-            background-color: #1d4ed8; /* blue-700 */
-            transform: scale(1.05);
+
+        #restartButton {
+            padding: 0.75rem 1.5rem;
         }
+
+            .theme-toggle-button:hover,
+            #restartButton:hover {
+                background-color: var(--button-hover-bg);
+                transform: scale(1.05);
+            }
+
         #scoreContainer {
             margin-top: 1rem; /* 16px */
             font-size: 1.5rem; /* 24px */
+            display: flex;
+            gap: 2rem;
         }
-        /* Utility classes previously from Tailwind */
+        /* Utility classes */
         .hidden {
             display: none;
         }
+
         .flex {
             display: flex;
         }
     </style>
 </head>
-<body>
+<body class="dark-mode">
     <div class="game-container">
-        <h1 class="game-title">Ball Bouncer</h1>
+        <div class="title-container">
+            <h1 class="game-title">Ball Bouncer</h1>
+            <button id="themeToggle" class="theme-toggle-button">Toggle Theme</button>
+        </div>
         <canvas id="gameCanvas" width="480" height="320"></canvas>
         <div id="gameOverScreen" class="hidden">
             <h2 class="game-over-title">Game Over</h2>
@@ -96,7 +145,10 @@
             <button id="restartButton">Restart</button>
         </div>
     </div>
-    <div id="scoreContainer">Score: <span id="scoreValue">0</span></div>
+    <div id="scoreContainer">
+        <span>Score: <span id="scoreValue">0</span></span>
+        <span>High Score: <span id="highScoreValue">0</span></span>
+    </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -105,24 +157,29 @@
         const restartButton = document.getElementById('restartButton');
         const finalScoreElement = document.getElementById('finalScore');
         const scoreValueElement = document.getElementById('scoreValue');
+        const highScoreValueElement = document.getElementById('highScoreValue');
+        const themeToggleButton = document.getElementById('themeToggle');
 
-        // --- Game Variables ---
+        // --- Game & Theme Variables ---
         let balls = [];
         const ballRadius = 10;
-
         let paddleHeight = 10;
         let paddleWidth = 75;
         let paddleX;
-
         let rightPressed = false;
         let leftPressed = false;
-        
         let gameIsOver = false;
         let score = 0;
+        let highScore = 0;
 
-        // --- Ball Creation ---
-        function createBall(x, y, dx, dy) {
-            return { x, y, dx, dy, radius: ballRadius };
+        // Colors for canvas elements, will be updated from CSS variables
+        let ballColor, paddleColor;
+
+        // --- Color Updater ---
+        function updateCanvasColors() {
+            const computedStyles = getComputedStyle(document.documentElement);
+            ballColor = computedStyles.getPropertyValue('--ball-color').trim();
+            paddleColor = computedStyles.getPropertyValue('--paddle-color').trim();
         }
 
         // --- Initial Setup ---
@@ -131,14 +188,30 @@
             paddleX = (canvas.width - paddleWidth) / 2;
             score = 0;
             scoreValueElement.textContent = score;
+
+            // Load high score from local storage
+            highScore = localStorage.getItem('ballBouncerHighScore') || 0;
+            highScoreValueElement.textContent = highScore;
+
             gameIsOver = false;
             gameOverScreen.classList.add('hidden');
             gameOverScreen.classList.remove('flex');
+            updateCanvasColors();
+        }
+
+        // --- Ball Creation ---
+        function createBall(x, y, dx, dy) {
+            return { x, y, dx, dy, radius: ballRadius };
         }
 
         resetGame(); // Initialize the game state
 
         // --- Event Listeners ---
+        themeToggleButton.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            updateCanvasColors(); // Re-read CSS variables and update canvas colors
+        });
+
         document.addEventListener("keydown", keyDownHandler, false);
         document.addEventListener("keyup", keyUpHandler, false);
         document.addEventListener("mousemove", mouseMoveHandler, false);
@@ -148,19 +221,13 @@
         });
 
         function keyDownHandler(e) {
-            if (e.key == "Right" || e.key == "ArrowRight") {
-                rightPressed = true;
-            } else if (e.key == "Left" || e.key == "ArrowLeft") {
-                leftPressed = true;
-            }
+            if (e.key == "Right" || e.key == "ArrowRight") rightPressed = true;
+            else if (e.key == "Left" || e.key == "ArrowLeft") leftPressed = true;
         }
 
         function keyUpHandler(e) {
-            if (e.key == "Right" || e.key == "ArrowRight") {
-                rightPressed = false;
-            } else if (e.key == "Left" || e.key == "ArrowLeft") {
-                leftPressed = false;
-            }
+            if (e.key == "Right" || e.key == "ArrowRight") rightPressed = false;
+            else if (e.key == "Left" || e.key == "ArrowLeft") leftPressed = false;
         }
 
         function mouseMoveHandler(e) {
@@ -178,7 +245,7 @@
             balls.forEach(ball => {
                 ctx.beginPath();
                 ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-                ctx.fillStyle = "#0095DD";
+                ctx.fillStyle = ballColor; // Use theme color
                 ctx.fill();
                 ctx.closePath();
             });
@@ -187,75 +254,65 @@
         function drawPaddle() {
             ctx.beginPath();
             ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
-            ctx.fillStyle = "#0095DD";
+            ctx.fillStyle = paddleColor; // Use theme color
             ctx.fill();
             ctx.closePath();
         }
 
         // --- Game Logic ---
         function draw() {
-            if (gameIsOver) {
-                return;
-            }
+            if (gameIsOver) return;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawBalls();
             drawPaddle();
 
-            // --- Ball Logic and Collision ---
             for (let i = balls.length - 1; i >= 0; i--) {
                 let ball = balls[i];
 
-                // Wall collision (left/right)
-                if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
-                    ball.dx = -ball.dx;
-                }
-
-                // Wall collision (top)
-                if (ball.y + ball.dy < ball.radius) {
-                    ball.dy = -ball.dy;
-                } 
-                // Collision with bottom
+                if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) ball.dx = -ball.dx;
+                if (ball.y + ball.dy < ball.radius) ball.dy = -ball.dy;
                 else if (ball.y + ball.dy > canvas.height - ball.radius) {
-                    // Check if it hits the paddle
                     if (ball.x > paddleX && ball.x < paddleX + paddleWidth) {
                         ball.dy = -ball.dy;
                         score++;
                         scoreValueElement.textContent = score;
-                        
-                        // Add a new ball every 10 points
-                        if (score % 10 === 0) {
-                            const newBallDx = (Math.random() - 0.5) * 4; // Random horizontal speed
+
+                        // Check if a new ball should be added (and avoid adding multiple for the same score)
+                        if (score > 0 && score % 10 === 0 && balls.length === (score / 10)) {
+                            const newBallDx = (Math.random() - 0.5) * 4;
                             balls.push(createBall(canvas.width / 2, canvas.height / 2, newBallDx, -2));
                         }
-                        
+
                         let deltaX = ball.x - (paddleX + paddleWidth / 2);
                         ball.dx = deltaX * 0.15;
                     } else {
-                        // Ball missed the paddle, remove it from the game
                         balls.splice(i, 1);
                     }
                 }
 
-                // Update ball position
                 ball.x += ball.dx;
                 ball.y += ball.dy;
             }
 
-            // --- Game Over Condition ---
+            // --- Game Over Check ---
             if (balls.length === 0) {
                 gameIsOver = true;
-                finalScoreElement.textContent = `Your Final Score: ${score}`;
+                let gameOverText = `Your Final Score: ${score}`;
+                // Check for new high score
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('ballBouncerHighScore', highScore);
+                    highScoreValueElement.textContent = highScore;
+                    gameOverText = `New High Score: ${score}!`;
+                }
+                finalScoreElement.textContent = gameOverText;
                 gameOverScreen.classList.remove('hidden');
                 gameOverScreen.classList.add('flex');
             }
 
-            // --- Paddle Movement ---
-            if (rightPressed && paddleX < canvas.width - paddleWidth) {
-                paddleX += 7;
-            } else if (leftPressed && paddleX > 0) {
-                paddleX -= 7;
-            }
+            if (rightPressed && paddleX < canvas.width - paddleWidth) paddleX += 7;
+            else if (leftPressed && paddleX > 0) paddleX -= 7;
 
             requestAnimationFrame(draw);
         }
