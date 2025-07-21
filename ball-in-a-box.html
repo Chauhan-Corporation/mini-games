@@ -172,6 +172,10 @@
         let score = 0;
         let highScore = 0;
 
+        // Control scheme variables
+        let lastInput = 'mouse'; // 'mouse' or 'keyboard'
+        let mouseX = canvas.width / 2;
+
         // Colors for canvas elements, will be updated from CSS variables
         let ballColor, paddleColor;
 
@@ -186,6 +190,7 @@
         function resetGame() {
             balls = [createBall(canvas.width / 2, canvas.height - 30, 2, -2)];
             paddleX = (canvas.width - paddleWidth) / 2;
+            mouseX = canvas.width / 2;
             score = 0;
             scoreValueElement.textContent = score;
 
@@ -221,6 +226,7 @@
         });
 
         function keyDownHandler(e) {
+            lastInput = 'keyboard'; // Switch to keyboard control on key press
             if (e.key == "Right" || e.key == "ArrowRight") rightPressed = true;
             else if (e.key == "Left" || e.key == "ArrowLeft") leftPressed = true;
         }
@@ -231,12 +237,11 @@
         }
 
         function mouseMoveHandler(e) {
+            lastInput = 'mouse'; // Switch to mouse control on mouse move
             const rect = canvas.getBoundingClientRect();
             let relativeX = e.clientX - rect.left;
             if (relativeX > 0 && relativeX < canvas.width) {
-                paddleX = relativeX - paddleWidth / 2;
-                if (paddleX < 0) paddleX = 0;
-                if (paddleX + paddleWidth > canvas.width) paddleX = canvas.width - paddleWidth;
+                mouseX = relativeX;
             }
         }
 
@@ -311,8 +316,24 @@
                 gameOverScreen.classList.add('flex');
             }
 
-            if (rightPressed && paddleX < canvas.width - paddleWidth) paddleX += 7;
-            else if (leftPressed && paddleX > 0) paddleX -= 7;
+            // --- Paddle Movement ---
+            if (lastInput === 'mouse') {
+                paddleX = mouseX - paddleWidth / 2;
+            } else { // lastInput === 'keyboard'
+                if (rightPressed) {
+                    paddleX += 7;
+                } else if (leftPressed) {
+                    paddleX -= 7;
+                }
+            }
+
+            // Constrain paddle to canvas walls
+            if (paddleX < 0) {
+                paddleX = 0;
+            }
+            if (paddleX + paddleWidth > canvas.width) {
+                paddleX = canvas.width - paddleWidth;
+            }
 
             requestAnimationFrame(draw);
         }
